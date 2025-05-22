@@ -50,7 +50,8 @@ export const addToCart = async (req, res) => {
         productId,
         quantity,
         price: product.price,
-        name: product.name
+        name: product.name,
+        image: product.images && product.images.length > 0 ? product.images[0] : ""
       });
       cart.items.push(newCartItem._id);
     }

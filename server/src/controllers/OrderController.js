@@ -30,7 +30,7 @@ export const createOrder = async (req, res) => {
       totalAmount,
       shippingAddress,
       status: ORDER_STATUS.PENDING,
-      paymentStatus: PAYMENT_STATUS.PENDING
+      paymentStatus: PAYMENT_STATUS.PAID
     }, { transaction });
 
     // Create order items and update product stock
@@ -50,7 +50,8 @@ export const createOrder = async (req, res) => {
         productId: item.productId.toString(), // Convert ObjectId to string
         quantity: item.quantity,
         price: item.price,
-        name: item.name
+        name: item.name,
+        image: item.image || ""
       }, { transaction });
 
       // Update product stock
@@ -64,9 +65,17 @@ export const createOrder = async (req, res) => {
 
     await transaction.commit();
 
+    // Fetch the complete order with items for the response
+    const completeOrder = await Order.findByPk(order.id, {
+      include: [{ 
+        model: OrderItem,
+        as: 'items'
+      }]
+    });
+
     res.status(201).json({
       message: 'Order created successfully',
-      order
+      order: completeOrder
     });
   } catch (error) {
     await transaction.rollback();
@@ -79,9 +88,9 @@ export const getUserOrders = async (req, res) => {
   try {
     const orders = await Order.findAll({
       where: { userId: req.user.id },
-      include: [{
+      include: [{ 
         model: OrderItem,
-        attributes: ['productId', 'quantity', 'price', 'name']
+        as: 'items'
       }],
       order: [['createdAt', 'DESC']]
     });
@@ -100,9 +109,9 @@ export const getOrder = async (req, res) => {
         id: req.params.id,
         userId: req.user.id
       },
-      include: [{
+      include: [{ 
         model: OrderItem,
-        attributes: ['productId', 'quantity', 'price', 'name']
+        as: 'items'
       }]
     });
 

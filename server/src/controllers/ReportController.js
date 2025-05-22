@@ -10,7 +10,7 @@ export const getSalesReport = async (req, res) => {
     const { startDate, endDate } = req.query;
     
     const whereClause = {
-      status: ORDER_STATUS.COMPLETED,
+      status: ORDER_STATUS.DELIVERED,
       paymentStatus: PAYMENT_STATUS.PAID
     };
 
@@ -115,14 +115,16 @@ export const getProductPerformance = async (req, res) => {
 
 export const getInventoryReport = async (req, res) => {
   try {
-    const inventory = await Product.findAll({
-      attributes: [
-        'name',
-        'category',
-        'stock',
-        'price',
-        [sequelize.literal('stock * price'), 'totalValue']
-      ]
+    const products = await Product.find({}, 'name category stock price');
+    
+    const inventory = products.map(product => {
+      return {
+        name: product.name,
+        category: product.category,
+        stock: product.stock,
+        price: product.price,
+        totalValue: product.stock * product.price
+      };
     });
 
     res.json(inventory);
